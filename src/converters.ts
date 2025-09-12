@@ -1,11 +1,11 @@
+import type { ToolCall } from "@mistralai/mistralai/models/components";
 import type {
     MCPCallToolRequest,
     MCPListToolsResult,
     MCPCallToolResult,
     MistralTool,
-    MistralToolCall,
     MistralToolMessage,
-  } from "./types";
+} from "./types";
 
 export function toMistralTools(
     listToolResult: MCPListToolsResult
@@ -20,7 +20,7 @@ export function toMistralTools(
     }));
 }
 
-export function toMcpToolCall(toolCall: MistralToolCall): MCPCallToolRequest {
+export function toMcpToolCall(toolCall: ToolCall): MCPCallToolRequest {
     const call = toolCall.function;
     const toolCallArguments =
         typeof call.arguments === "string"
@@ -40,16 +40,17 @@ export function toMistralMessage(
     let content: MistralToolMessage["content"];
 
     if ("content" in callToolResult && callToolResult.content) {
-        content = callToolResult.content.map((item) => {
-            if (item.type === "text") {
-                return {
-                    type: "text",
-                    text: item.text,
-                } as const;
+        // Convert all content to text for Mistral
+        const textContent = callToolResult.content.map((item) => {
+            if (item.type === "text" && "text" in item) {
+                return String(item.text);
             } else {
-                throw new Error(`Unsupported content type: ${item.type}`);
+                // For non-text content, serialize to JSON string
+                return JSON.stringify(item);
             }
-        });
+        }).join("\n");
+
+        content = textContent;
     } else if ("toolResult" in callToolResult && callToolResult.toolResult) {
         // Handle case where content is not provided and toolResult is used instead
         content = JSON.stringify(callToolResult.toolResult);

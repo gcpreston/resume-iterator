@@ -6,41 +6,31 @@ export type MCPServer = {
 
 type MCPTool = {
     name: string;
-    description?: string;
+    description?: string | undefined;
     inputSchema: {
         type: "object";
-        properties?: Record<string, unknown>;
+        properties?: Record<string, unknown> | undefined;
     };
 };
 
 export type MCPListToolsResult = {
     tools: MCPTool[];
-    nextCursor?: string;
+    nextCursor?: string | undefined;
 };
 
 export type MistralTool = {
     type?: "function";
     function: {
         name: string;
-        description?: string;
-        strict?: boolean;
+        description?: string | undefined;
+        strict?: boolean | undefined;
         parameters: Record<string, unknown>;
     };
 };
 
-export type MistralToolCall = {
-    id?: string;
-    type?: "function" | string;
-    function: {
-        name: string;
-        arguments: Record<string, unknown> | string;
-    };
-    index?: number;
-};
-
 export type MCPCallToolRequest = {
     name: string;
-    arguments?: Record<string, unknown>;
+    arguments?: Record<string, unknown> | undefined;
 };
 
 type MCPTextContent = {
@@ -54,23 +44,35 @@ type MCPImageContent = {
     mimeType: string;
 };
 
+type MCPAudioContent = {
+    type: "audio";
+    data: string;
+    mimeType: string;
+};
+
 type MCPResourceContent = {
     type: "resource";
     resource:
     | {
         text: string;
         uri: string;
-        mimeType?: string;
+        mimeType?: string | undefined;
     }
-    | { blob: string; uri: string; mimeType?: string };
+    | { blob: string; uri: string; mimeType?: string | undefined };
 };
 
-type MCPContent = MCPTextContent | MCPImageContent | MCPResourceContent;
+// Make content types more flexible to handle actual MCP SDK responses
+type MCPContent = 
+    | MCPTextContent 
+    | MCPImageContent 
+    | MCPAudioContent 
+    | MCPResourceContent
+    | { type: string; [key: string]: unknown }; // Catch-all for other content types
 
 export type MCPCallToolResult =
     | {
         content: MCPContent[];
-        isError?: boolean;
+        isError?: boolean | undefined;
     }
     | { toolResult?: unknown };
 
@@ -102,6 +104,6 @@ type MistralContentChunk =
 export type MistralToolMessage = {
     role: "tool";
     content: string | MistralContentChunk[] | null;
-    toolCallId?: string | null;
-    name?: string | null;
+    toolCallId?: string | null | undefined;
+    name?: string | null | undefined;
 };

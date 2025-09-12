@@ -9,7 +9,7 @@ import type {
     Tool,
 } from "@mistralai/mistralai/models/components";
 import { toMistralMessage, toMistralTools, toMcpToolCall } from "./converters.js";
-import type { MCPServer } from "./types.js";
+import type { MCPListToolsResult, MCPServer } from "./types.js";
 
 // https://keesheuperman.com/mcp-with-mistral/
 dotenv.config();
@@ -21,7 +21,7 @@ const servers: MCPServer[] = [
         args: [
             "-y",
             "@modelcontextprotocol/server-filesystem",
-            "/Users/graham.preston/src/resume-iterator"
+            "./"
         ]
     }
 ];
@@ -50,7 +50,7 @@ class Agent {
 
             // Store the tools and their corresponding clients in a map,
             // so we can call the right client when a tool is called later.
-            const toolsList = await client.listTools();
+            const toolsList: MCPListToolsResult = await client.listTools();
             const toolsForMistral = toMistralTools(toolsList);
             this.tools.push(...toolsForMistral);
             for (const tool of toolsForMistral) {
@@ -87,11 +87,12 @@ class Agent {
     }
 
     async handleResponse(response: ChatCompletionResponse) {
-        if (!response.choices?.length) {
+        const firstChoice = response.choices[0];
+        if (!firstChoice) {
             throw new Error("No response choices found");
         }
 
-        const { message: assistantMessage, finishReason } = response.choices[0];
+        const { message: assistantMessage, finishReason } = firstChoice;
 
         if (
             assistantMessage.content &&
@@ -119,6 +120,8 @@ class Agent {
                 const mcpToolCall = toMcpToolCall(toolCall);
                 const client = this.toolToClientMap[toolCall.function.name];
                 console.log(`Using tool: ${toolCall.function.name} ...`);
+
+                if (!client) throw new Error(`No client found for tool ${toolCall.function.name}`)
 
                 const toolResult = await client.callTool(mcpToolCall);
                 const message = toMistralMessage(toolCall.id, toolResult);
