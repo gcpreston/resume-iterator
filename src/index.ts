@@ -1,13 +1,17 @@
+import * as readline from "readline/promises";
+
 import * as dotenv from "dotenv";
 import { Mistral } from "@mistralai/mistralai";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { SDKError } from "@mistralai/mistralai/models/errors/sdkerror.js";
 import type {
     AssistantMessage,
     ChatCompletionResponse,
     Messages,
     Tool,
 } from "@mistralai/mistralai/models/components";
+
 import { toMistralMessage, toMistralTools, toMcpToolCall } from "./converters.js";
 import type { MCPListToolsResult, MCPServer } from "./types.js";
 
@@ -75,14 +79,21 @@ class Agent {
             this.messages.push(message);
         }
 
-        const response = await this.ai.chat.complete({
-            model: "mistral-small-latest",
-            messages: this.messages,
-            tools: this.tools,
-        });
+        try {
+            // TODO: Stream
+            const response = await this.ai.chat.complete({
+                model: "mistral-small-latest",
+                messages: this.messages,
+                tools: this.tools,
+            });
 
-        if (response.choices?.length) {
             await this.handleResponse(response);
+        } catch (err) {
+            if (err instanceof SDKError) {
+                console.error(err.message);
+            } else {
+                console.error(`Received unknown error: ${err}`);
+            }
         }
     }
 
@@ -148,10 +159,26 @@ async function main() {
     // });
     const agent = new Agent(client);
     await agent.connect(servers);
-    await agent.call(
-        "Please read the file read_me.txt and tell me what you find inside."
-    );
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    while (true) {
+        const prompt = await rl.question(">>> ");
+
+        if (prompt.trim() === "quit") {
+            break;
+        }
+
+        await agent.call(prompt);
+    }
+
+    console.log("Disconnecting from Mistral...");
     await agent.disconnect();
+    console.log("Disconected.");
+    // TODO: Doesn't exit after this! Node listeners strike again...
 
     // ----
     // const result = await client.chat.stream({
