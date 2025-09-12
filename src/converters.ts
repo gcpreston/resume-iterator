@@ -7,6 +7,8 @@ import type {
     MistralToolMessage,
 } from "./types";
 
+// https://keesheuperman.com/mcp-with-mistral/
+
 export function toMistralTools(
     listToolResult: MCPListToolsResult
 ): MistralTool[] {
