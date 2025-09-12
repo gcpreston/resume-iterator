@@ -9,18 +9,6 @@ import type { MCPServer } from "./types.js";
 
 dotenv.config();
 
-const servers: MCPServer[] = [
-    {
-        name: "filesystem",
-        command: "npx",
-        args: [
-            "-y",
-            "@modelcontextprotocol/server-filesystem",
-            "./"
-        ]
-    }
-];
-
 async function main() {
     // Create client
     const apiKey = process.env["MISTRAL_API_KEY"];
@@ -31,6 +19,17 @@ async function main() {
     const client = new Mistral({ apiKey: apiKey });
 
     // Define local MCP server and agent
+    const servers: MCPServer[] = [
+        {
+            name: "filesystem",
+            command: "npx",
+            args: [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "./"
+            ]
+        }
+    ];
     const agent = new Agent(client);
     await agent.connect(servers);
 
