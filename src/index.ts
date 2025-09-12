@@ -70,7 +70,7 @@ class Agent {
         }
     }
 
-    async call(message: string | Messages): Promise<void> {
+    async* call(message: string | Messages): AsyncGenerator<string> {
         if (typeof message === "string") {
             this.messages.push({ role: "user", content: message });
         } else {
@@ -84,17 +84,17 @@ class Agent {
                 tools: this.tools,
             });
 
-            await this._handleResponse(response);
+            yield* this._handleResponse(response);
         } catch (err) {
             if (err instanceof SDKError) {
-                console.error(err.message);
+                yield `Error: ${err.message}`;
             } else {
-                console.error(`Received unknown error: ${err}`);
+                yield `Received unknown error: ${err}`;
             }
         }
     }
 
-    async _handleResponse(response: ChatCompletionResponse): Promise<void> {
+    async* _handleResponse(response: ChatCompletionResponse): AsyncGenerator<string> {
         const firstChoice = response.choices[0];
         if (!firstChoice) {
             throw new Error("No response choices found");
@@ -104,7 +104,7 @@ class Agent {
 
         // Output message, if relevant
         if (assistantMessage.content && typeof assistantMessage.content === "string") {
-            console.log(`[Mistral]: ${assistantMessage.content}`);
+            yield `[Mistral]: ${assistantMessage.content}`;
         }
 
         // Add response message to chat history
@@ -117,11 +117,11 @@ class Agent {
             if (!assistantMessage.toolCalls) {
                 throw new Error("No tool calls found in response");
             }
-            this._handleToolCalls(assistantMessage.toolCalls);
+            yield* this._handleToolCalls(assistantMessage.toolCalls);
         }
     }
 
-    async _handleToolCalls(toolCalls: ToolCall[]): Promise<void> {
+    async* _handleToolCalls(toolCalls: ToolCall[]): AsyncGenerator<string> {
         for (const toolCall of toolCalls) {
             if (!toolCall.id) {
                 throw new Error("Tool call ID not found");
@@ -129,14 +129,14 @@ class Agent {
 
             const mcpToolCall = toMcpToolCall(toolCall);
             const client = this.toolToClientMap[toolCall.function.name];
-            console.log(`Using tool: ${toolCall.function.name} ...`);
+            yield `Using tool: ${toolCall.function.name} ...`;
 
             if (!client) throw new Error(`No client found for tool ${toolCall.function.name}`)
 
             const toolResult = await client.callTool(mcpToolCall);
             const message = toMistralMessage(toolCall.id, toolResult);
 
-            await this.call(message);
+            yield* this.call(message);
         }
     }
 }
@@ -173,7 +173,9 @@ async function main() {
             continue;
         }
 
-        await agent.call(prompt);
+        for await (const output of agent.call(prompt)) {
+            console.log(output);
+        }
         console.log(); // newline between response and next prompt
     }
 
