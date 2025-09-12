@@ -1,0 +1,1 @@
+Hello Mistral 👋 if you're reading this, the MCP server and connection work!
