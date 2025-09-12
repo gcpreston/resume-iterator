@@ -1,15 +1,16 @@
 import * as readline from "readline/promises";
 
 import * as dotenv from "dotenv";
-import { Mistral } from "@mistralai/mistralai";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Mistral } from "@mistralai/mistralai";
 import { SDKError } from "@mistralai/mistralai/models/errors/sdkerror.js";
 import type {
     AssistantMessage,
     ChatCompletionResponse,
     Messages,
     Tool,
+    ToolCall,
 } from "@mistralai/mistralai/models/components";
 
 import { toMistralMessage, toMistralTools, toMcpToolCall } from "./converters.js";
@@ -41,7 +42,7 @@ class Agent {
         this.ai = ai;
     }
 
-    async connect(servers: MCPServer[]) {
+    async connect(servers: MCPServer[]): Promise<void> {
         for (const server of servers) {
             const transport = new StdioClientTransport(server);
             const client = new Client({
@@ -63,31 +64,27 @@ class Agent {
         }
     }
 
-    async disconnect() {
+    async disconnect(): Promise<void> {
         for (const client of this.clients) {
             await client.close();
         }
     }
 
-    async call(message: string | Messages) {
+    async call(message: string | Messages): Promise<void> {
         if (typeof message === "string") {
-            this.messages.push({
-                role: "user",
-                content: message,
-            });
+            this.messages.push({ role: "user", content: message });
         } else {
             this.messages.push(message);
         }
 
         try {
-            // TODO: Stream
             const response = await this.ai.chat.complete({
                 model: "mistral-small-latest",
                 messages: this.messages,
                 tools: this.tools,
             });
 
-            await this.handleResponse(response);
+            await this._handleResponse(response);
         } catch (err) {
             if (err instanceof SDKError) {
                 console.error(err.message);
@@ -97,7 +94,7 @@ class Agent {
         }
     }
 
-    async handleResponse(response: ChatCompletionResponse) {
+    async _handleResponse(response: ChatCompletionResponse): Promise<void> {
         const firstChoice = response.choices[0];
         if (!firstChoice) {
             throw new Error("No response choices found");
@@ -105,40 +102,41 @@ class Agent {
 
         const { message: assistantMessage, finishReason } = firstChoice;
 
-        if (
-            assistantMessage.content &&
-            typeof assistantMessage.content === "string"
-        ) {
+        // Output message, if relevant
+        if (assistantMessage.content && typeof assistantMessage.content === "string") {
             console.log(`[Mistral]: ${assistantMessage.content}`);
         }
 
+        // Add response message to chat history
         if (assistantMessage.role === "assistant") {
-            this.messages.push(
-                assistantMessage as AssistantMessage & { role: "assistant" }
-            );
+            this.messages.push(assistantMessage as AssistantMessage & { role: "assistant" });
         }
 
+        // Call any tools and continue with Mistral flow, if relevant
         if (finishReason === "tool_calls") {
             if (!assistantMessage.toolCalls) {
                 throw new Error("No tool calls found in response");
             }
+            this._handleToolCalls(assistantMessage.toolCalls);
+        }
+    }
 
-            for (const toolCall of assistantMessage.toolCalls) {
-                if (!toolCall.id) {
-                    throw new Error("Tool call ID not found");
-                }
-
-                const mcpToolCall = toMcpToolCall(toolCall);
-                const client = this.toolToClientMap[toolCall.function.name];
-                console.log(`Using tool: ${toolCall.function.name} ...`);
-
-                if (!client) throw new Error(`No client found for tool ${toolCall.function.name}`)
-
-                const toolResult = await client.callTool(mcpToolCall);
-                const message = toMistralMessage(toolCall.id, toolResult);
-
-                await this.call(message);
+    async _handleToolCalls(toolCalls: ToolCall[]): Promise<void> {
+        for (const toolCall of toolCalls) {
+            if (!toolCall.id) {
+                throw new Error("Tool call ID not found");
             }
+
+            const mcpToolCall = toMcpToolCall(toolCall);
+            const client = this.toolToClientMap[toolCall.function.name];
+            console.log(`Using tool: ${toolCall.function.name} ...`);
+
+            if (!client) throw new Error(`No client found for tool ${toolCall.function.name}`)
+
+            const toolResult = await client.callTool(mcpToolCall);
+            const message = toMistralMessage(toolCall.id, toolResult);
+
+            await this.call(message);
         }
     }
 }
@@ -147,16 +145,12 @@ async function main() {
     // Create client
     const apiKey = process.env["MISTRAL_API_KEY"];
     if (!apiKey) {
-        console.error("API key not found, please set it via the environment variable MISTRAL_API_KEY.");
+        console.error("API key not found, please set it via the environment variable MISTRAL_API_KEY, or in a local .env file.");
         return;
     }
     const client = new Mistral({ apiKey: apiKey });
 
     // Define local MCP server and agent
-    // const fs_agent = await client.beta.agents.create({
-    //     model: "mistral-small-latest",
-    //     name: "file reader"
-    // });
     const agent = new Agent(client);
     await agent.connect(servers);
 
@@ -167,31 +161,26 @@ async function main() {
 
     while (true) {
         const prompt = await rl.question(">>> ");
+        console.log(); // newline between prompt and response
 
         if (prompt.trim() === "quit") {
             break;
         }
 
+        if (prompt.trim() === "debug") {
+            console.log("Tools:", agent.tools);
+            console.log("Messages:", agent.messages);
+            continue;
+        }
+
         await agent.call(prompt);
+        console.log(); // newline between response and next prompt
     }
 
     console.log("Disconnecting from Mistral...");
     await agent.disconnect();
     console.log("Disconected.");
     // TODO: Doesn't exit after this! Node listeners strike again...
-
-    // ----
-    // const result = await client.chat.stream({
-    //     model: "mistral-small-latest",
-    //     messages: [{ role: "user", content: "What is the best French cheese?" }],
-    // });
-
-    // for await (const chunk of result) {
-    //     const streamText = chunk.data.choices[0]?.delta.content;
-    //     if (typeof streamText === "string") {
-    //         process.stdout.write(streamText);
-    //     }
-    // }
 }
 
 main();
