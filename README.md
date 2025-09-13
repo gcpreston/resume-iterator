@@ -37,9 +37,9 @@ The notable feature of this design is the decoupling of the communication medium
 
 ## Notes on testing
 
-Tests have not been included for now. The following things would be useful to be tested:
+Unit tests have not been included for now. The following things would be useful to be tested:
 - the different converters
 - `Agent`'s public methods
 - the `printGeneratorOutput` helper
 
-While for a real project, tests would be needed for regression assurance, here, the effort does not necessarily outweigh the chance of error. For example, testing `Agent`'s API would mean creating and injecting accurate mocks, which has a high risk of both false positives and false negatives, and is complex. For this single-flow project, I figure it is a better use of time to simply ensure that running the program actually works as intended.
+While for a real project, unit/integration tests would be needed for regression assurance, here, the effort does not necessarily outweigh the chance of error. For example, testing `Agent`'s API would mean creating and injecting accurate mocks, which has a high risk of both false positives and false negatives, and is complex. For this single-flow project, I figure it is a better use of time to simply ensure that running the program actually works as intended.
