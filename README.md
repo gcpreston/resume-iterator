@@ -1,46 +1,25 @@
-# Resume Iterator Web Interface
+# resume-iterator
 
-A NextJS web application that provides a chat interface for the Resume Iterator AI assistant.
+An AI agent tool to give resume/CV feedback. Its purpose is to provide iterative, directed feedback, without needing for you to re-upload a file to a web interface with each new request.
 
-## Features
+Created for the software engineering intern position at Mistral AI, in Paris.
 
-- Clean, responsive chat interface
-- Real-time streaming responses from Mistral AI
-- API key input for secure authentication
-- Built with NextJS 14 and Tailwind CSS
-- Integrates with MCP (Model Context Protocol) servers
+## Local setup and execution
 
-## Setup
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Run the development server:
-```bash
-npm run dev
-```
-
+1. Install dependencies with `npm install`
+2. Start the server with `npm run dev`
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
-
 4. Enter your Mistral API key in the input field at the top
+5. Start asking for feedback
 
-5. Start chatting with the Resume Iterator assistant!
+For testing convenience, I've included the text of my CV in markdown in `examples/graham_preston_cv.md`.
 
-## How it works
+## Design
 
-- The web interface connects to the same Agent class used in the CLI version
-- It uses Server-Sent Events (SSE) to stream responses in real-time
-- The assistant will help you iterate on your resume or CV files
-- It has access to filesystem tools through MCP servers
+This is a NextJS web application.
 
-## Usage
+There are 3 layers for this basic project: the user interface, the REST API, and the business logic. Each layer is contained to its own module: the UI in `app/page.tsx`, the API in `app/api/route.ts`, and the business logic in `resume_agent.ts`. As such, the interfaces between these modules are made to be as simple as possible: `resume_agent.ts` exposes a single function to the web API `getAssistantReply`, which does all the work to call the Mistral API iteratively and give back the reply that the user cares about. Likewise, the web API exposes one endpoint to the frontend, `POST /api/chat`, which does the same.
 
-1. Enter your Mistral API key
-2. The assistant will greet you and ask for your resume file path
-3. Provide the path to your resume/CV file
-4. Ask for feedback, suggestions, or help with specific sections
-5. The assistant will read your file and provide targeted advice
+## Tests
 
-The assistant is focused on resume/CV editing and will politely decline unrelated requests.
+Tests can be found in the `__tests__` directory. Jest mocks are used in place of API calls; `app.test.tsx` mocks fetch calls to the backend, while `resume_agent.test.ts` mocks calls to the Mistral API SDK.
