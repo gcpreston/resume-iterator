@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage } from '@/lib/types';
+import { ConversationResponse } from '@mistralai/mistralai/models/components';
 
 export default function Home() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [apiKey, setApiKey] = useState('');
     const [resumeText, setResumeText] = useState('');
+    const [conversationId, setConversationId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFirstMessage, setIsFirstMessage] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,8 @@ export default function Home() {
                     message: input.trim(),
                     apiKey: apiKey.trim(),
                     isFirstMessage,
+                    resumeText,
+                    conversationId
                 }),
             });
 
@@ -50,58 +54,28 @@ export default function Home() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error('No reader available');
+            const conversation: ConversationResponse = await response.json();
 
-            let assistantMessage = '';
-            const decoder = new TextDecoder();
+            setConversationId(conversation.conversationId);
+            console.log("got api response:", conversation);
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+            const output = conversation.outputs[0];
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+            if (output) {
+                setMessages(prev => {
+                    const newMessages = [...prev];
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.slice(6));
-
-                            if (data.error) {
-                                throw new Error(data.error);
-                            }
-
-                            if (data.content) {
-                                assistantMessage += data.content + '\n';
-
-                                // Update the last message or create a new one
-                                setMessages(prev => {
-                                    const newMessages = [...prev];
-                                    const lastMessage = newMessages[newMessages.length - 1];
-
-                                    if (lastMessage && lastMessage.role === 'assistant') {
-                                        lastMessage.content = assistantMessage.trim();
-                                    } else {
-                                        newMessages.push({
-                                            role: 'assistant',
-                                            content: assistantMessage.trim(),
-                                            timestamp: new Date(),
-                                        });
-                                    }
-
-                                    return newMessages;
-                                });
-                            }
-
-                            if (data.done) {
-                                break;
-                            }
-                        } catch (e) {
-                            console.error('Error parsing SSE data:', e);
-                        }
+                    if (output.type === "message.output") {
+                        newMessages.push({
+                            role: output.role,
+                            content: output.content,
+                            timestamp: output.completedAt ? new Date(output.completedAt) : new Date()
+                        });
+                        console.log("added message", newMessages[newMessages.length - 1])
                     }
-                }
+
+                    return newMessages;
+                });
             }
 
             setIsFirstMessage(false);
@@ -123,6 +97,8 @@ export default function Home() {
             sendMessage();
         }
     };
+
+    // TODO: Render markdown from replies
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
