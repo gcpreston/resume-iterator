@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/lib/types";
+import Markdown from "marked-react";
 
 type AssistantReplyJSON = {
     conversationId: string;
@@ -90,8 +91,6 @@ export default function Home() {
         }
     };
 
-    // TODO: Render markdown from replies
-
     return (
         <div className="flex flex-col h-screen bg-gray-50">
             {/* Header */}
@@ -161,7 +160,9 @@ export default function Home() {
                                             : "bg-gray-100 text-gray-600"
                                         }`}
                                 >
-                                    <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                                    <div className="whitespace-pre-wrap text-sm">
+                                        <Markdown value={message.content} />
+                                    </div>
                                     <div className="text-xs opacity-70 mt-1">
                                         {message.timestamp.toLocaleTimeString()}
                                     </div>

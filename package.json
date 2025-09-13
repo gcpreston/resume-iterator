@@ -18,6 +18,7 @@
     "@mistralai/mistralai": "^1.10.0",
     "@modelcontextprotocol/sdk": "^1.18.0",
     "@modelcontextprotocol/server-filesystem": "^2025.8.21",
-    "dotenv": "^17.2.2"
+    "dotenv": "^17.2.2",
+    "marked-react": "^3.0.1"
   }
 }
