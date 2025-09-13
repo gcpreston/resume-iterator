@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import type { ChatMessage } from "@/lib/types";
 import Markdown from "marked-react";
+import type { ChatMessage } from "@/lib/types";
 
 type AssistantReplyJSON = {
     conversationId: string;
