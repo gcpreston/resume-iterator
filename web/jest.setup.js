@@ -22,3 +22,10 @@ global.TextEncoder = jest.fn().mockImplementation(() => ({
 
 // Mock scrollIntoView for JSDOM
 Element.prototype.scrollIntoView = jest.fn()
+
+// Mock marked-react
+jest.mock('marked-react', () => {
+  return function Markdown({ value }) {
+    return value
+  }
+})
