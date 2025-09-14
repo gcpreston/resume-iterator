@@ -7,9 +7,12 @@ Created for the software engineering intern position at Mistral AI, in Paris.
 ## Local setup and execution
 
 1. Install dependencies with `npm install`
-2. Start the server with `npm run dev`
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
-4. Enter your Mistral API key in the input field at the top
+2. Create a `.env` file in the root directory and add your Mistral API key:
+   ```
+   MISTRAL_API_KEY=your_api_key_here
+   ```
+3. Start the server with `npm run dev`
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 5. Start asking for feedback
 
 For testing convenience, I've included the text of my CV in markdown in `examples/graham_preston_cv.md`.

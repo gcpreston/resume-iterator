@@ -36,7 +36,9 @@ async function createResumeAgent(client: Mistral): Promise<Agent> {
           You will help the user iterate on a resume or CV as they edit it. You can see the contents of the resume
           or CV at any time using the tool getResumeText. If the user asks to do something that is too unrelated to 
           resume or CV editing, refuse the request and tell them to use a different tool; try to be focused on the 
-          purpose, but not overly strict.
+          purpose, but not overly strict. On every request, assume the user wants you to read the current version
+          of the resume or CV unless otherwise directed. **Never** ask the user for their resume or CV unless you
+          have already invoked the getResumeText tool and it returned nothing.
     `,
     description: "Agent to give repeated resume or CV feedback.",
     tools: [

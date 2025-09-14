@@ -18,7 +18,6 @@ type ChatMessage = {
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [apiKey, setApiKey] = useState("");
   const [resumeText, setResumeText] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +32,7 @@ export default function Home() {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!input.trim() || !apiKey.trim() || isLoading) return;
+    if (!input.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       role: "user",
@@ -53,7 +52,6 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: input.trim(),
-          apiKey: apiKey.trim(),
           resumeText,
           conversationId
         }),
@@ -101,21 +99,6 @@ export default function Home() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b p-4">
         <h1 className="text-2xl font-bold text-gray-800 mb-4">Resume Iterator Chat</h1>
-
-        {/* API Key Input */}
-        <div className="flex gap-2 items-center">
-          <label htmlFor="apiKey" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-            Mistral API Key:
-          </label>
-          <input
-            id="apiKey"
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter your Mistral API key"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
       </div>
 
       {/* Main Content - Two Column Layout */}
@@ -147,7 +130,7 @@ export default function Home() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && (
               <div className="text-center text-gray-500 mt-8">
-                <p>Enter your Mistral API key above and start chatting!</p>
+                <p>Start chatting to get feedback on your resume!</p>
                 <p className="text-sm mt-2">This assistant will help you iterate on your resume or CV.</p>
               </div>
             )}
@@ -197,13 +180,13 @@ export default function Home() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message here..."
-                disabled={!apiKey.trim() || isLoading}
+                disabled={isLoading}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                 rows={2}
               />
               <button
                 onClick={sendMessage}
-                disabled={!input.trim() || !apiKey.trim() || isLoading}
+                disabled={!input.trim() || isLoading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 Send

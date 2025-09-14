@@ -3,10 +3,11 @@ import { getAssistantReply } from "@/lib/resume_agent";
 
 export async function POST(request: NextRequest) {
   try {
-    const { apiKey, conversationId, message, resumeText } = await request.json();
+    const { conversationId, message, resumeText } = await request.json();
 
+    const apiKey = process.env.MISTRAL_API_KEY;
     if (!apiKey) {
-      return new Response('API key is required', { status: 400 });
+      return new Response('Server configuration error: API key not found', { status: 500 });
     }
 
     if (!message) {
