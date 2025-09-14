@@ -20,14 +20,7 @@ describe("Resume Iterator Web App", () => {
       expect(screen.getByText("Resume Iterator Chat")).toBeInTheDocument();
     });
 
-    it("renders the API key input section", () => {
-      render(<Home />);
 
-      expect(screen.getByLabelText("Mistral API Key:")).toBeInTheDocument();
-      expect(
-        screen.getByPlaceholderText("Enter your Mistral API key")
-      ).toBeInTheDocument();
-    });
 
     it("renders the two-column layout", () => {
       render(<Home />);
@@ -61,7 +54,7 @@ describe("Resume Iterator Web App", () => {
       render(<Home />);
 
       expect(
-        screen.getByText("Enter your Mistral API key above and start chatting!")
+        screen.getByText("Start chatting to get feedback on your resume!")
       ).toBeInTheDocument();
       expect(
         screen.getByText(
@@ -71,28 +64,7 @@ describe("Resume Iterator Web App", () => {
     });
   });
 
-  describe("API Key Input Tests", () => {
-    it("allows typing in the API key field", async () => {
-      const user = userEvent.setup();
-      render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
-
-      await act(async () => {
-        await user.type(apiKeyInput, "test-api-key-123");
-      });
-
-      expect(apiKeyInput).toHaveValue("test-api-key-123");
-    });
-
-    it("API key field is password type", () => {
-      render(<Home />);
-
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
-
-      expect(apiKeyInput).toHaveAttribute("type", "password");
-    });
-  });
 
   describe("Resume Text Area Tests", () => {
     it("allows typing in the resume text area", async () => {
@@ -124,47 +96,25 @@ describe("Resume Iterator Web App", () => {
   });
 
   describe("Chat Input Interactivity Tests", () => {
-    it("chat input is disabled when API key is empty", () => {
+    it("chat input is always enabled", () => {
       render(<Home />);
 
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
-
-      expect(chatInput).toBeDisabled();
-    });
-
-    it("chat input is enabled when API key is provided", async () => {
-      const user = userEvent.setup();
-      render(<Home />);
-
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
-      const chatInput = screen.getByPlaceholderText(
-        "Type your message here..."
-      );
-
-      // Initially disabled
-      expect(chatInput).toBeDisabled();
-
-      // Enable by providing API key
-      await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
-      });
 
       expect(chatInput).not.toBeDisabled();
     });
 
-    it("allows typing in chat input when API key is provided", async () => {
+    it("allows typing in chat input", async () => {
       const user = userEvent.setup();
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello, can you help me with my resume?");
       });
 
@@ -173,7 +123,7 @@ describe("Resume Iterator Web App", () => {
   });
 
   describe("Send Button Tests", () => {
-    it("send button is disabled when API key is empty", () => {
+    it("send button is disabled when message is empty", () => {
       render(<Home />);
 
       const sendButton = screen.getByRole("button", { name: "Send" });
@@ -181,32 +131,16 @@ describe("Resume Iterator Web App", () => {
       expect(sendButton).toBeDisabled();
     });
 
-    it("send button is disabled when message is empty", async () => {
+    it("send button is enabled when message is provided", async () => {
       const user = userEvent.setup();
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
-      const sendButton = screen.getByRole("button", { name: "Send" });
-
-      await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
-      });
-
-      expect(sendButton).toBeDisabled();
-    });
-
-    it("send button is enabled when both API key and message are provided", async () => {
-      const user = userEvent.setup();
-      render(<Home />);
-
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
       });
 
@@ -238,14 +172,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -256,7 +188,7 @@ describe("Resume Iterator Web App", () => {
   });
 
   describe("Keyboard Interaction Tests", () => {
-    it("Enter key submits message when API key and message are provided", async () => {
+    it("Enter key submits message when message is provided", async () => {
       const user = userEvent.setup();
 
       mockFetch.mockResolvedValueOnce({
@@ -271,13 +203,11 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.keyboard("{Enter}");
       });
@@ -289,7 +219,6 @@ describe("Resume Iterator Web App", () => {
         },
         body: JSON.stringify({
           message: "Hello",
-          apiKey: "test-api-key",
           resumeText: "",
           conversationId: null,
         }),
@@ -300,13 +229,11 @@ describe("Resume Iterator Web App", () => {
       const user = userEvent.setup();
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.keyboard("{Shift>}{Enter}{/Shift}");
       });
@@ -314,12 +241,16 @@ describe("Resume Iterator Web App", () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("Enter key does not submit when API key is missing", async () => {
+    it("Enter key does not submit when message is empty", async () => {
       const user = userEvent.setup();
       render(<Home />);
 
-      // Chat input should be disabled, but let's test the logic
+      const chatInput = screen.getByPlaceholderText(
+        "Type your message here..."
+      );
+
       await act(async () => {
+        await user.click(chatInput);
         await user.keyboard("{Enter}");
       });
 
@@ -343,14 +274,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello, can you help me?");
         await user.click(sendButton);
       });
@@ -375,14 +304,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -417,14 +344,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -449,17 +374,15 @@ describe("Resume Iterator Web App", () => {
 
       // Initially shows welcome message
       expect(
-        screen.getByText("Enter your Mistral API key above and start chatting!")
+        screen.getByText("Start chatting to get feedback on your resume!")
       ).toBeInTheDocument();
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -467,7 +390,7 @@ describe("Resume Iterator Web App", () => {
       await waitFor(() => {
         expect(
           screen.queryByText(
-            "Enter your Mistral API key above and start chatting!"
+            "Start chatting to get feedback on your resume!"
           )
         ).not.toBeInTheDocument();
       });
@@ -482,14 +405,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -509,14 +430,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -535,14 +454,12 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const chatInput = screen.getByPlaceholderText(
         "Type your message here..."
       );
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(chatInput, "Hello");
         await user.click(sendButton);
       });
@@ -577,7 +494,6 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const resumeTextArea = screen.getByPlaceholderText(
         "Paste your resume or CV content here..."
       );
@@ -587,7 +503,6 @@ describe("Resume Iterator Web App", () => {
       const sendButton = screen.getByRole("button", { name: "Send" });
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(resumeTextArea, "John Doe - Software Engineer");
         await user.type(chatInput, "Please review my resume");
         await user.click(sendButton);
@@ -600,7 +515,6 @@ describe("Resume Iterator Web App", () => {
         },
         body: JSON.stringify({
           message: "Please review my resume",
-          apiKey: "test-api-key",
           resumeText: "John Doe - Software Engineer",
           conversationId: null,
         }),
@@ -622,7 +536,6 @@ describe("Resume Iterator Web App", () => {
 
       render(<Home />);
 
-      const apiKeyInput = screen.getByLabelText("Mistral API Key:");
       const resumeTextArea = screen.getByPlaceholderText(
         "Paste your resume or CV content here..."
       );
@@ -635,7 +548,6 @@ describe("Resume Iterator Web App", () => {
         "John Doe\\nSoftware Engineer\\nExperience: 5 years";
 
       await act(async () => {
-        await user.type(apiKeyInput, "test-api-key");
         await user.type(resumeTextArea, resumeContent);
       });
 
