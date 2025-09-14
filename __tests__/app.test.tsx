@@ -20,8 +20,6 @@ describe("Resume Iterator Web App", () => {
       expect(screen.getByText("Resume Iterator Chat")).toBeInTheDocument();
     });
 
-
-
     it("renders the two-column layout", () => {
       render(<Home />);
 
@@ -63,8 +61,6 @@ describe("Resume Iterator Web App", () => {
       ).toBeInTheDocument();
     });
   });
-
-
 
   describe("Resume Text Area Tests", () => {
     it("allows typing in the resume text area", async () => {
