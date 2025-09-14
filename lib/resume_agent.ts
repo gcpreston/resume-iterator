@@ -7,6 +7,15 @@ type AssistantReply = {
   timestamp: Date;
 };
 
+/**
+ * Prompt the agent for feedback on a resume or CV.
+ * 
+ * @param apiKey         API key for Mistral
+ * @param conversationId The current conversation ID, if one exists; null to start a new conversation
+ * @param message        The prompt message
+ * @param resumeText     The resume in question
+ * @returns              The agent's reply to the prompt
+ */
 export async function getAssistantReply(
   apiKey: string, 
   conversationId: string | null, 

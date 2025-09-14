@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAssistantReply } from "@/lib/resume_agent";
 
+/**
+ * Ask for resume feedback via the REST API.
+ */
 export async function POST(request: NextRequest) {
   try {
     const { conversationId, message, resumeText } = await request.json();
